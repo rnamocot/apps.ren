@@ -18,9 +18,20 @@ document.getElementById("year").textContent = new Date().getFullYear();
   }
   btn?.addEventListener("click", () => {
     const next = effective() === "dark" ? "light" : "dark";
-    html.setAttribute("data-theme", next);
-    try { localStorage.setItem("rn_theme", next); } catch {}
-    paint();
+    const apply = () => {
+      html.setAttribute("data-theme", next);
+      try { localStorage.setItem("rn_theme", next); } catch {}
+      paint();
+    };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return apply();
+    // Slow fade of the whole page between themes
+    if (document.startViewTransition) {
+      document.startViewTransition(apply);
+    } else {
+      html.classList.add("theme-anim");
+      apply();
+      setTimeout(() => html.classList.remove("theme-anim"), 950);
+    }
   });
   mq.addEventListener?.("change", () => { if (!html.getAttribute("data-theme")) paint(); });
   paint();
@@ -209,7 +220,7 @@ const CHAT = {
     state.step = "sending";
     updateSend();
     const subject = `[apps.renienamocot.com] ${state.topic || "New message"} from ${state.name}`;
-    const body = `${state.message}\n\n— ${state.name} <${state.email}>`;
+    const body = `${state.message}\n\nFrom: ${state.name} <${state.email}>`;
 
     if (CHAT.web3formsKey) {
       const t = await bot("Sending…", 200);
@@ -474,28 +485,40 @@ function showVisits() {
 })();
 
 /* =========================================================
-   FilRadio widget: "Listen live" on the FilRadio row opens the player;
-   the button shows the station while something is playing.
+   FilRadio mini player on the FilRadio row.
+   Play opens the FilRadio widget (pick a station there), pause stops it.
+   The widget reports what's playing through the "filradio:state" event.
    ========================================================= */
 (function filRadio() {
-  const btn = document.querySelector("[data-filradio]");
-  if (!btn) return;
-  const text = btn.querySelector(".listen__text");
+  const box = document.querySelector("[data-filradio]");
+  if (!box) return;
+  const play = box.querySelector(".player__play");
+  const title = box.querySelector(".player__title");
+  let playing = false;
+
+  function render(isPlaying, station) {
+    playing = !!isPlaying;
+    box.classList.toggle("is-playing", playing);
+    title.textContent = playing ? (station || "Live radio") : (station ? station : "Pick a station");
+    play.setAttribute("aria-label", playing ? "Pause FilRadio" : "Play FilRadio");
+  }
+
   const ready = () => {
     if (!window.FilRadio) return false;
-    btn.hidden = false;
+    box.hidden = false;
+    render(window.FilRadio.playing, window.FilRadio.station);
     return true;
   };
-  // the widget script is deferred and loads after this one; wait for it briefly
   if (!ready()) {
     let tries = 0;
     const t = setInterval(() => { if (ready() || ++tries > 40) clearInterval(t); }, 250);
   }
-  btn.addEventListener("click", () => window.FilRadio?.toggle());
-  addEventListener("filradio:state", (e) => {
-    const { playing, station } = e.detail || {};
-    const name = typeof station === "string" ? station : station?.name || station?.title || "";
-    btn.classList.toggle("is-playing", !!playing);
-    text.textContent = playing ? (name ? "Playing: " + name : "Playing") : "Listen live";
+
+  play.addEventListener("click", () => {
+    if (!window.FilRadio) return;
+    if (playing) window.FilRadio.pause();
+    else window.FilRadio.open();
   });
+  box.querySelector(".player__open").addEventListener("click", () => window.FilRadio?.toggle());
+  addEventListener("filradio:state", (e) => render(e.detail?.playing, e.detail?.station));
 })();

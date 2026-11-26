@@ -714,3 +714,170 @@ img.logo { background: transparent; }
 /* keep the avatar crisp above the wordmark */
 .profile__avatar { position: relative; background: #fff; }
 @media (prefers-reduced-motion: reduce) { .cover-word { animation: none; } }
+
+/* ================= ZENDZ wordmark animation =================
+   Each letter carries its own outline + fill so it can move:
+   a slow staggered float (wave) and a light band sweeping through. */
+.cover-word {
+  display: flex;
+  -webkit-text-stroke: 0; background: none; color: inherit;
+}
+.cover-word span {
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in oklab, var(--foreground) 18%, transparent);
+  background:
+    linear-gradient(105deg,
+      transparent 0 38%,
+      color-mix(in oklab, var(--foreground) 22%, transparent) 50%,
+      transparent 62% 100%) 120% 0 / 300% 100% no-repeat,
+    linear-gradient(180deg, color-mix(in oklab, var(--foreground) 9%, transparent), transparent 85%);
+  -webkit-background-clip: text; background-clip: text;
+  animation:
+    zendz-float 6s ease-in-out infinite,
+    zendz-shine 7s cubic-bezier(.45,0,.2,1) infinite;
+  animation-delay: calc(var(--i) * -0.45s), calc(var(--i) * 0.12s + 1.2s);
+}
+@keyframes zendz-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes zendz-shine {
+  0%       { background-position: 120% 0, 0 0; }
+  35%, 100% { background-position: -20% 0, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cover-word span { animation: none; }
+}
+
+/* ================= Day/night switch (replaces the sun/moon icon) ================= */
+.theme-toggle {
+  width: 58px; height: 30px; padding: 0; border-radius: 999px;
+  background: transparent; box-shadow: none; display: block;
+}
+.theme-toggle:hover { box-shadow: none; }
+.tt-track {
+  position: relative; display: block; width: 100%; height: 100%; border-radius: inherit; overflow: hidden;
+  background: linear-gradient(180deg, #e8eef7, #dbe4f0);
+  box-shadow: inset 0 0 0 1px #0000000f, inset 0 1px 3px #0000001a;
+  transition: background .45s ease;
+}
+.tt-stars {
+  position: absolute; inset: 0; opacity: 0; transform: translateY(6px);
+  background:
+    radial-gradient(1.2px 1.2px at 10px 9px, #fff 99%, transparent),
+    radial-gradient(1px 1px at 18px 20px, #fff 99%, transparent),
+    radial-gradient(1.4px 1.4px at 25px 8px, #fff 99%, transparent),
+    radial-gradient(1px 1px at 8px 19px, #ffffffb3 99%, transparent),
+    radial-gradient(1px 1px at 30px 16px, #ffffffb3 99%, transparent);
+  transition: opacity .45s ease, transform .45s ease;
+}
+.tt-knob {
+  position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffd36b, #f59e0b);
+  box-shadow: 0 0 0 4px #f59e0b26, 0 0 12px #f59e0b66, 0 1px 2px #0003;
+  transition: transform .5s cubic-bezier(.65,-0.2,.25,1.3), background .45s ease, box-shadow .45s ease;
+}
+/* dark: knob slides right and becomes a crescent moon, stars appear */
+.theme-toggle[data-mode="dark"] .tt-track { background: linear-gradient(180deg, #111827, #1e293b); box-shadow: inset 0 0 0 1px #ffffff1a, inset 0 1px 3px #0006; }
+.theme-toggle[data-mode="dark"] .tt-stars { opacity: 1; transform: none; animation: tt-twinkle 2.4s ease-in-out infinite; }
+.theme-toggle[data-mode="dark"] .tt-knob {
+  transform: translateX(28px) rotate(-30deg);
+  background: transparent;
+  box-shadow: inset -7px -2px 0 0 #e5e7eb, 0 0 10px #e5e7eb33;
+}
+.theme-toggle:hover .tt-knob { filter: brightness(1.06); }
+.theme-toggle:active .tt-knob { width: 26px; }
+.theme-toggle[data-mode="dark"]:active .tt-knob { transform: translateX(24px) rotate(-30deg); }
+.theme-toggle:focus-visible { box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent); }
+@keyframes tt-twinkle { 50% { opacity: .55; } }
+@media (max-width: 63.99rem) { .profile__head { padding-right: 66px; } }
+@media (prefers-reduced-motion: reduce) {
+  .tt-knob, .tt-track, .tt-stars { transition: none; }
+  .theme-toggle[data-mode="dark"] .tt-stars { animation: none; }
+}
+
+/* ================= Slow fade when switching light/dark ================= */
+/* Chrome, Edge, Safari: whole-page cross-fade */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: .9s; animation-timing-function: cubic-bezier(.4,0,.2,1); }
+/* the switch animates live on top instead of being cross-faded */
+.theme-toggle { view-transition-name: theme-switch; }
+::view-transition-old(theme-switch) { display: none; }
+::view-transition-new(theme-switch) { animation: none; }
+/* Other browsers: ease every colour change */
+.theme-anim, .theme-anim *:not(.tt-track):not(.tt-knob):not(.tt-stars),
+.theme-anim *::before, .theme-anim *::after {
+  transition: background-color .85s ease, color .85s ease, border-color .85s ease,
+              box-shadow .85s ease, fill .85s ease, stroke .85s ease, -webkit-text-stroke-color .85s ease !important;
+}
+
+/* ================= FilRadio mini player (no box) ================= */
+.player {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 14px; max-width: 100%;
+}
+.player[hidden] { display: none; }
+.player__play {
+  flex: none; position: relative; width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  display: grid; place-items: center;
+  background: var(--primary); color: var(--primary-foreground);
+  box-shadow: 0 6px 16px -6px rgb(0 0 0 / .45);
+  transition: transform .15s ease;
+}
+.player__play:hover { transform: scale(1.06); }
+.player__play:active { transform: scale(.94); }
+.player__play svg { grid-area: 1 / 1; width: 18px; height: 18px; fill: currentColor; transition: opacity .2s, transform .25s cubic-bezier(.2,.8,.2,1); }
+.player__play .pp-play { transform: translateX(1px); }
+.player__play .pp-pause { opacity: 0; transform: scale(.5); }
+.player.is-playing .pp-play { opacity: 0; transform: scale(.5); }
+.player.is-playing .pp-pause { opacity: 1; transform: none; }
+/* pulsing ring while live */
+.player.is-playing .player__play::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid #22c55e; animation: pp-ring 1.8s ease-out infinite;
+}
+@keyframes pp-ring { from { transform: scale(1); opacity: .8; } to { transform: scale(1.5); opacity: 0; } }
+
+.player__meta { min-width: 0; flex: 0 1 auto; display: flex; flex-direction: column; line-height: 1.25; }
+.player__title { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.player__sub { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player__live {
+  display: none; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #16a34a;
+}
+.player__live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: tt-twinkle 1.2s ease-in-out infinite; }
+.player.is-playing .player__live { display: inline-flex; }
+
+/* waveform: faint and still when idle, dancing when playing */
+.player__wave { flex: 1; min-width: 40px; height: 26px; display: flex; align-items: center; gap: 2px; overflow: hidden; }
+.player__wave i {
+  flex: 1 0 2px; max-width: 3px; height: var(--h); border-radius: 2px;
+  background: color-mix(in oklab, var(--foreground) 22%, transparent);
+  transform: scaleY(.35); transform-origin: center;
+  transition: transform .4s ease, background .4s ease;
+}
+.player.is-playing .player__wave i {
+  background: var(--foreground);
+  animation: pp-wave 1s ease-in-out infinite alternate;
+  animation-delay: var(--d);
+}
+@keyframes pp-wave { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+
+.player__open {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px;
+  border: 0; border-radius: 8px; background: transparent; cursor: pointer;
+  color: var(--muted-foreground); font: inherit; font-size: 13px; font-weight: 500;
+  transition: color .15s, background .15s;
+}
+.player__open:hover { color: var(--foreground); background: var(--muted); }
+.player__open svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 30rem) {
+  .player__open span { display: none; }
+  .player__title { max-width: 150px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player.is-playing .player__wave i, .player.is-playing .player__play::after, .player__live::before { animation: none; }
+  .player.is-playing .player__wave i { transform: scaleY(.7); }
+}
