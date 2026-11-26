@@ -21,7 +21,8 @@ Options -Indexes
   </IfModule>
 </Files>
 
-# Cache images for a week; CSS/JS for an hour so updates show quickly
+# Cache images for a week; CSS/JS for an hour.
+# index.html links CSS/JS with ?v=..., bump it on every release so browsers refetch.
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresByType image/png  "access plus 7 days"
@@ -30,4 +31,5 @@ Options -Indexes
   ExpiresByType image/svg+xml "access plus 7 days"
   ExpiresByType text/css "access plus 1 hour"
   ExpiresByType application/javascript "access plus 1 hour"
+  ExpiresByType text/javascript "access plus 1 hour"
 </IfModule>
