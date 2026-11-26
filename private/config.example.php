@@ -14,6 +14,7 @@ return [
         'tarsiflow'      => 'tarsiflow',
         'mypickleball'   => 'MyPickleball',
         'filradio'       => 'FilRadio',
+        'zendz-tools'    => 'Zendz Tools',
     ],
 
     'currencies' => ['PHP' => '₱', 'USD' => '$'],
