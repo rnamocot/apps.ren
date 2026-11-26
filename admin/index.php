@@ -190,11 +190,12 @@ $data = load_data();
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin · Renie Namocot</title>
-  <link rel="icon" href="../favicon.ico" sizes="48x48">
+  <link rel="icon" href="../favicon.ico?v=2" sizes="48x48">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css?v=20261126b">
+  <script>try{var t=localStorage.getItem("rn_theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+  <link rel="stylesheet" href="../styles.css?v=20261126c">
   <style>
     body { background: var(--background); }
     .admin { width: 100%; max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }

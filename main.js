@@ -1,6 +1,32 @@
 document.getElementById("year").textContent = new Date().getFullYear();
 
 /* =========================================================
+   Theme toggle: follows the device until you pick one,
+   then remembers your choice (localStorage "rn_theme").
+   ========================================================= */
+(function themeToggle() {
+  const btn = document.querySelector(".theme-toggle");
+  const html = document.documentElement;
+  const mq = matchMedia("(prefers-color-scheme: dark)");
+  const effective = () => html.getAttribute("data-theme") || (mq.matches ? "dark" : "light");
+  function paint() {
+    const dark = effective() === "dark";
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", dark ? "#0a0a0a" : "#ffffff"));
+    if (!btn) return;
+    btn.dataset.mode = dark ? "dark" : "light";
+    btn.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+  }
+  btn?.addEventListener("click", () => {
+    const next = effective() === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    try { localStorage.setItem("rn_theme", next); } catch {}
+    paint();
+  });
+  mq.addEventListener?.("change", () => { if (!html.getAttribute("data-theme")) paint(); });
+  paint();
+})();
+
+/* =========================================================
    Contact chat
    ---------------------------------------------------------
    Messages are delivered with Web3Forms (free, no backend).
