@@ -2,6 +2,7 @@
 private/config.php
 private/auth.php
 private/attempts.json
+private/presence.json
 *.tmp
 
 # Local / unused

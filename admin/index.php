@@ -49,6 +49,7 @@ function csrf_ok(): bool {
 }
 
 function write_atomic(string $file, string $contents): bool {
+    if (!is_dir(dirname($file))) @mkdir(dirname($file), 0755, true);
     $tmp = $file . '.' . bin2hex(random_bytes(4)) . '.tmp';
     if (file_put_contents($tmp, $contents, LOCK_EX) === false) return false;
     return rename($tmp, $file);

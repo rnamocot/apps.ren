@@ -231,68 +231,156 @@ const CHAT = {
 })();
 
 /* =========================================================
-   Visitor counter (unique per browser)
-   Uses Abacus (https://abacus.jasoncameron.dev), free, no signup.
+   Visitors: total (Abacus, unique per browser) + live ("here right now",
+   api/presence.php on this server). Never counts local previews.
    ========================================================= */
-(function visitors() {
-  const box = document.getElementById("visits");
+const IS_LOCAL = location.protocol === "file:" || /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname);
+
+function showVisits() {
+  const live = !document.getElementById("live-wrap").hidden;
+  const total = !document.getElementById("visits-wrap").hidden;
+  document.getElementById("visits-sep").hidden = !(live && total);
+  document.getElementById("visits").hidden = !(live || total);
+}
+
+(function visitorTotal() {
   const out = document.getElementById("visits-count");
-  if (!box || !out) return;
+  if (!out) return;
   const API = "https://abacus.jasoncameron.dev";
   const KEY = "apps-renienamocot-com/visitors-live";
-  // never count local previews (file:// or localhost)
-  const isLocal = location.protocol === "file:" || /^(localhost|127.|0.0.0.0)/.test(location.hostname);
   let seen = false;
   try { seen = localStorage.getItem("rn_visited") === "1"; } catch {}
   const ctrl = new AbortController();
   setTimeout(() => ctrl.abort(), 5000);
-  fetch(`${API}/${seen || isLocal ? "get" : "hit"}/${KEY}`, { signal: ctrl.signal })
+  fetch(`${API}/${seen || IS_LOCAL ? "get" : "hit"}/${KEY}`, { signal: ctrl.signal })
     .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
     .then(({ value }) => {
       if (typeof value !== "number") return;
-      try { localStorage.setItem("rn_visited", "1"); } catch {}
+      if (!IS_LOCAL) try { localStorage.setItem("rn_visited", "1"); } catch {}
       out.textContent = value.toLocaleString("en-US");
       document.getElementById("visits-label").textContent = value === 1 ? "visitor" : "visitors";
-      box.hidden = false;
+      document.getElementById("visits-wrap").hidden = false;
+      showVisits();
     })
     .catch(() => {});
 })();
 
+(function livePresence() {
+  const out = document.getElementById("live-count");
+  if (!out || location.protocol === "file:") return;
+  const URL = "api/presence.php";
+  let id;
+  try { id = localStorage.getItem("rn_pid"); } catch {}
+  if (!/^[a-f0-9]{32}$/.test(id || "")) {
+    id = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    try { localStorage.setItem("rn_pid", id); } catch {}
+  }
+  let timer = null;
+
+  function ping() {
+    fetch(URL, { method: "POST", body: new URLSearchParams({ id }), cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(({ now }) => {
+        if (typeof now !== "number" || now < 1) return;
+        out.textContent = now.toLocaleString("en-US");
+        document.getElementById("live-wrap").hidden = false;
+        showVisits();
+      })
+      .catch(() => {});
+  }
+  const start = () => { ping(); clearInterval(timer); timer = setInterval(ping, 20000); };
+  const stop = () => { clearInterval(timer); timer = null; };
+
+  document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
+  addEventListener("pagehide", () => navigator.sendBeacon?.(URL, new URLSearchParams({ id, leave: "1" })));
+  if (!document.hidden) start();
+})();
+
 /* =========================================================
    Revenue / MRR (managed in /admin, stored in data/revenue.json)
+   - Each visible app gets "₱X/mo" or "₱X revenue" on its card
+   - The summary card totals only apps that are NOT hidden,
+     grouped by currency (no conversion)
    ========================================================= */
 (function revenue() {
   const SYM = { PHP: "₱", USD: "$" };
   const fmt = (n, cur) => (SYM[cur] || "") + Number(n).toLocaleString("en-US", { maximumFractionDigits: n % 1 ? 2 : 0 });
 
+  // Order cards: MRR apps (highest first), then total-revenue apps, then the rest
+  // in their original order. USD is converted only to compare; amounts shown stay exact.
+  function sortCards(apps) {
+    const USD_TO_PHP = 58; // approximate; only used for ordering
+    const list = document.querySelector("#apps .grid2");
+    if (!list) return;
+    const items = [...list.children];
+    const rank = (li, i) => {
+      const d = apps[li.querySelector(".app")?.dataset.app];
+      const amt = d && d.mode !== "hidden" ? (Number(d.amount) || 0) * (d.currency === "USD" ? USD_TO_PHP : 1) : 0;
+      const group = !amt ? 2 : d.mode === "mrr" ? 0 : 1;
+      return { li, i, group, amt };
+    };
+    items.map(rank)
+      .sort((x, y) => x.group - y.group || y.amt - x.amt || x.i - y.i)
+      .forEach(({ li }) => list.append(li));
+  }
+  const join = (byCur) => Object.entries(byCur).filter(([, v]) => v > 0).map(([c, v]) => fmt(v, c)).join(" + ");
+
   fetch("data/revenue.json?v=" + Date.now(), { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : Promise.reject()))
-    .then(({ apps = {} }) => {
-      const totals = {};
+    .then(({ apps = {}, updated }) => {
+      const mrr = {}, total = {};
+      let earning = 0;
+
       document.querySelectorAll(".app[data-app]").forEach((card) => {
         const d = apps[card.dataset.app];
         card.querySelector(".app__mrr")?.remove();
         if (!d || d.mode === "hidden") return;
+        const amount = Number(d.amount) || 0;
+        if (amount > 0) earning++;
+
         const p = document.createElement("p");
         p.className = "app__mrr";
-        const amt = document.createElement("b");
-        amt.textContent = fmt(d.amount, d.currency);
-        p.append(amt, document.createTextNode(d.mode === "mrr" ? "/mo" : " revenue"));
+        const b = document.createElement("b");
+        b.textContent = fmt(amount, d.currency);
+        p.append(b, document.createTextNode(d.mode === "mrr" ? "/mo" : " revenue"));
         if (d.mode === "mrr") {
           const sr = document.createElement("span");
           sr.className = "sr-only";
           sr.textContent = " monthly recurring revenue";
           p.append(sr);
-          totals[d.currency] = (totals[d.currency] || 0) + Number(d.amount);
+          mrr[d.currency] = (mrr[d.currency] || 0) + amount;
+        } else {
+          total[d.currency] = (total[d.currency] || 0) + amount;
         }
         card.querySelector(".app__desc").after(p);
       });
-      const tot = document.getElementById("mrr-total");
-      const parts = Object.entries(totals).filter(([, v]) => v > 0).map(([c, v]) => fmt(v, c));
-      if (tot && parts.length) {
-        tot.textContent = parts.join(" + ") + "/mo total";
-        tot.hidden = false;
+
+      sortCards(apps);
+
+      const box = document.getElementById("rev-stats");
+      const mrrText = join(mrr);
+      const totalText = join(total);
+      if (!box || (!mrrText && !totalText)) return;
+
+      const set = (id, text, suffix) => {
+        const el = document.getElementById(id);
+        el.textContent = text || "–";
+        if (text && suffix) {
+          const s = document.createElement("span");
+          s.textContent = suffix;
+          el.append(s);
+        }
+        el.parentElement.hidden = !text;
+      };
+      set("rev-mrr", mrrText, "/mo");
+      set("rev-total", totalText);
+      set("rev-count", String(earning), " of " + document.querySelectorAll(".app[data-app]").length);
+      if (updated) {
+        const dt = new Date(updated);
+        document.getElementById("rev-updated").textContent =
+          "Updated " + dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + ". Self-reported, before fees.";
       }
+      box.hidden = false;
     })
     .catch(() => {});
 })();

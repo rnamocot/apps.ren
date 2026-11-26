@@ -483,3 +483,29 @@ img.logo { background: transparent; }
 }
 .mrr-total[hidden] { display: none; }
 @media (max-width: 40rem) { .mrr-total { order: 3; flex-basis: 100%; margin: 0; } }
+
+/* ================= Revenue summary card ================= */
+.stats { padding: 16px 20px; margin-bottom: 32px; }
+.stats[hidden] { display: none; }
+.stats dl { display: flex; flex-wrap: wrap; margin: 0; }
+.stats dl > div { flex: 1 1 0; min-width: 140px; padding: 4px 20px; border-left: 1px solid var(--border); }
+.stats dl > div:first-child { padding-left: 0; border-left: 0; }
+.stats dl > div[hidden] { display: none; }
+.stats dt { font-size: 13px; color: var(--muted-foreground); }
+.stats dd {
+  margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums; color: var(--foreground);
+}
+.stats dd span { font-size: 14px; font-weight: 400; letter-spacing: 0; color: var(--muted-foreground); }
+.stats__note { margin-top: 10px; font-size: 12px; color: var(--muted-foreground); }
+.stats__note:empty { display: none; }
+@media (max-width: 40rem) {
+  .stats dl { flex-direction: column; gap: 12px; }
+  .stats dl > div { padding: 0; border-left: 0; }
+  .stats dl > div + div { padding-top: 12px; border-top: 1px solid var(--border); }
+}
+
+/* live + total visitors on one line */
+.visits { flex-wrap: wrap; column-gap: 6px; }
+.visits__sep { color: var(--muted-foreground); opacity: .6; }
+.visits [hidden] { display: none; }

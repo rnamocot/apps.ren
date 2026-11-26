@@ -118,16 +118,26 @@
 
       <p class="visits" id="visits" hidden>
         <span class="live" aria-hidden="true"></span>
-        <span><b id="visits-count">0</b> <span id="visits-label">visitors</span> so far</span>
+        <span id="live-wrap" hidden><b id="live-count">1</b> here right now</span>
+        <span class="visits__sep" id="visits-sep" hidden aria-hidden="true">·</span>
+        <span id="visits-wrap" hidden><b id="visits-count">0</b> <span id="visits-label">visitors</span> so far</span>
       </p>
     </aside>
 
     <!-- ================= RIGHT: APPS ================= -->
     <div class="content">
       <section id="apps" class="enter" style="--stagger:1" aria-labelledby="apps-title">
+        <div class="card stats" id="rev-stats" hidden>
+          <dl>
+            <div><dt>Monthly recurring revenue</dt><dd id="rev-mrr">–</dd></div>
+            <div><dt>Total revenue</dt><dd id="rev-total">–</dd></div>
+            <div><dt>Apps earning</dt><dd id="rev-count">–</dd></div>
+          </dl>
+          <p class="stats__note" id="rev-updated"></p>
+        </div>
+
         <div class="block__head">
           <h2 id="apps-title">My apps <span class="t14 muted count">8</span></h2>
-          <span class="mrr-total" id="mrr-total" hidden></span>
           <a class="head-link" href="https://www.renienamocot.com/projects.html" target="_blank" rel="noopener">All projects<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
         </div>
 
