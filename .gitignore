@@ -1,0 +1,11 @@
+# Secrets and server-written files (never commit)
+private/config.php
+private/auth.php
+private/attempts.json
+*.tmp
+
+# Local / unused
+renie-namocot.webp
+*.zip
+.DS_Store
+Thumbs.db
