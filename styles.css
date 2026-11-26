@@ -550,3 +550,167 @@ img.logo { background: transparent; }
 /* dark-mode touch-ups */
 :root[data-theme="dark"] .profile__avatar, :root[data-theme="dark"] .chat__head img { outline-color: #ffffff1f; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .profile__avatar { outline-color: #ffffff1f; } }
+
+/* ================= Screenshot preview on hover (mouse devices only) =================
+   Touch screens can't hover, so there the screenshot stays inside the card. */
+@media (hover: hover) and (pointer: fine) {
+  .app { overflow: visible; }
+  .app .shot {
+    position: absolute; left: -8px; right: -8px; top: calc(100% + 10px);
+    z-index: 30; margin: 0; padding: 0;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translateY(-6px) scale(.98); transform-origin: top center;
+    transition: opacity .18s ease, transform .18s ease, visibility 0s linear .18s;
+  }
+  .app.flip .shot { top: auto; bottom: calc(100% + 10px); transform-origin: bottom center; transform: translateY(6px) scale(.98); }
+  .app .shot img {
+    border-radius: 12px;
+    box-shadow: var(--surface-shadow), 0 24px 48px -12px rgb(0 0 0 / .28);
+    transform: none !important;
+  }
+  .app:has(h3 a:hover) .shot, .app:has(h3 a:focus-visible) .shot {
+    opacity: 1; visibility: visible; transform: none;
+    transition: opacity .18s ease, transform .18s ease, visibility 0s;
+  }
+  .app:has(h3 a:hover), .app:has(h3 a:focus-visible) { z-index: 31; position: relative; }
+  .grid2 > li { position: relative; }
+  .grid2 > li:has(h3 a:hover), .grid2 > li:has(h3 a:focus-visible) { z-index: 31; }
+}
+
+/* =====================================================================
+   App list v2: open rows instead of boxed cards (no border/radius/bg)
+   ===================================================================== */
+.grid2 { column-gap: 48px; row-gap: 0; border-bottom: 1px solid var(--border); }
+.grid2 > li { border-top: 1px solid var(--border); }
+.grid2 .app.card,
+.grid2 .app.card:has(a:hover),
+.grid2 .app.card:has(:focus-visible) {
+  background: none; box-shadow: none; border-radius: 0;
+  padding: 22px 0 24px;
+}
+/* only the name is the link (no full-row overlay) */
+.grid2 .app h3 { flex: 0 1 auto; margin-right: auto; }
+.grid2 .app h3 a::after { content: none; }
+.grid2 .app h3 a { cursor: pointer; }
+
+/* bigger logo, lifts on hover */
+.grid2 .app .logo { width: 36px; height: 36px; border-radius: 9px; transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+.grid2 .app:has(h3 a:hover) .logo { transform: translateY(-2px) rotate(-4deg); }
+
+/* name: underline grows + arrow slides in */
+.grid2 .app h3 { font-size: 17px; }
+.grid2 .app h3 a span:first-child {
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size .3s cubic-bezier(.2,.8,.2,1);
+  padding-bottom: 1px;
+}
+.grid2 .app h3 a:hover span:first-child,
+.grid2 .app h3 a:focus-visible span:first-child { background-size: 100% 1px; }
+.grid2 .app h3 a::before {
+  content: "↗"; order: 2; font-size: 14px; color: var(--muted-foreground);
+  opacity: 0; transform: translate(-4px, 4px);
+  transition: opacity .2s, transform .25s cubic-bezier(.2,.8,.2,1);
+}
+.grid2 .app h3 a:hover::before,
+.grid2 .app h3 a:focus-visible::before { opacity: 1; transform: none; }
+
+/* category tag: notched label sitting in the row (no fold, no overhang) */
+.grid2 .ribbon { margin-right: 0; padding: 3px 10px 3px 14px; font-size: 10.5px; }
+.grid2 .app__top::after { display: none; }
+
+/* "Check more projects" as an open row */
+.more.card { background: none; box-shadow: none; border-radius: 0; margin-top: 0; padding: 28px 0 4px; }
+.more:hover { box-shadow: none; }
+.more h3 { font-size: 17px; }
+
+/* =====================================================================
+   Motion
+   ===================================================================== */
+/* scroll reveal (class added by JS, so content is visible without JS) */
+.reveal { opacity: 0; transform: translateY(14px); }
+.reveal.in {
+  opacity: 1; transform: none;
+  transition: opacity .6s cubic-bezier(.2,.8,.2,1), transform .6s cubic-bezier(.2,.8,.2,1);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+/* hover preview grows in from a smaller size */
+@media (hover: hover) and (pointer: fine) {
+  .grid2 .app .shot { transform: translateY(-8px) scale(.94); }
+  .grid2 .app.flip .shot { transform: translateY(8px) scale(.94); }
+  .grid2 .app:has(h3 a:hover) .shot, .grid2 .app:has(h3 a:focus-visible) .shot { transform: none; transition-duration: .25s; }
+}
+/* revenue line pulses once when it appears */
+.app__mrr::before { animation: mrr-pop .6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes mrr-pop { 0% { transform: scale(0); } 60% { transform: scale(1.5); } 100% { transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in { opacity: 1; transform: none; transition: none; }
+  .grid2 .app .logo, .grid2 .app h3 a::before, .grid2 .app h3 a span:first-child { transition: none; }
+  .app__mrr::before { animation: none; }
+}
+
+/* no double line under the header */
+.grid2 > li:first-child { border-top: 0; }
+@media (min-width: 40rem) { .grid2 > li:nth-child(2) { border-top: 0; } }
+
+/* Role tags: clearly readable in light and dark */
+.roles span {
+  background: color-mix(in oklab, var(--foreground) 12%, var(--background));
+  color: var(--foreground);
+  font-weight: 600;
+}
+.roles span::before { background: var(--background); }
+
+/* ================= FilRadio "Listen live" ================= */
+.listen {
+  position: relative; z-index: 2;
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 12px; height: 32px; padding: 0 14px 0 10px; max-width: 100%;
+  border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--primary); color: var(--primary-foreground);
+  font: inherit; font-size: 13px; font-weight: 500;
+  transition: transform .15s, background .15s;
+}
+.listen[hidden] { display: none; }
+.listen:hover { transform: translateY(-1px); }
+.listen:active { transform: scale(.96); }
+.listen__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listen__icon { width: 0; height: 0; border-left: 8px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 4px; }
+/* playing: animated equaliser bars instead of the play triangle */
+.listen.is-playing .listen__icon {
+  width: 12px; height: 10px; border: 0; margin-left: 2px;
+  background:
+    linear-gradient(currentColor, currentColor) 0 100% / 3px 40% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 100% / 3px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 3px 60% no-repeat;
+  animation: eq 0.9s ease-in-out infinite alternate;
+}
+@keyframes eq {
+  0%   { background-size: 3px 40%, 3px 100%, 3px 60%; }
+  50%  { background-size: 3px 100%, 3px 50%, 3px 80%; }
+  100% { background-size: 3px 60%, 3px 80%, 3px 30%; }
+}
+@media (prefers-reduced-motion: reduce) { .listen.is-playing .listen__icon { animation: none; } }
+
+/* ================= "ZENDZ" wordmark behind the profile picture ================= */
+.cover-word {
+  position: absolute; z-index: -1; left: -6px; top: 18px;
+  font-size: clamp(5rem, 22vw, 8.5rem); font-weight: 800; line-height: .9; letter-spacing: -0.06em;
+  white-space: nowrap; pointer-events: none; user-select: none;
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in oklab, var(--foreground) 16%, transparent);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--foreground) 9%, transparent), transparent 85%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  animation: cover-in 1s cubic-bezier(.2,.8,.2,1) both .1s;
+}
+@keyframes cover-in { from { opacity: 0; transform: translateY(10px); letter-spacing: -0.02em; } }
+/* sized to stay inside the profile column (17rem / 21rem wide) */
+@media (min-width: 64rem) { .cover-word { top: 34px; font-size: 4.6rem; } }
+@media (min-width: 80rem) { .cover-word { font-size: 5.7rem; } }
+@media (max-width: 63.99rem) { .cover-word { top: 8px; left: auto; right: 40px; font-size: clamp(4rem, 20vw, 6rem); } }
+/* keep the avatar crisp above the wordmark */
+.profile__avatar { position: relative; background: #fff; }
+@media (prefers-reduced-motion: reduce) { .cover-word { animation: none; } }

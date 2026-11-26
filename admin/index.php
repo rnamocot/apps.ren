@@ -195,7 +195,7 @@ $data = load_data();
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script>try{var t=localStorage.getItem("rn_theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
-  <link rel="stylesheet" href="../styles.css?v=20261126c">
+  <link rel="stylesheet" href="../styles.css?v=20261126g">
   <style>
     body { background: var(--background); }
     .admin { width: 100%; max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }

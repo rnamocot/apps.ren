@@ -27,6 +27,67 @@ document.getElementById("year").textContent = new Date().getFullYear();
 })();
 
 /* =========================================================
+   Motion: rows fade/slide in as they scroll into view, numbers count up.
+   Skipped entirely when the visitor prefers reduced motion.
+   ========================================================= */
+const REDUCE_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+(function revealOnScroll() {
+  if (REDUCE_MOTION || !("IntersectionObserver" in window)) return;
+  const els = document.querySelectorAll(".grid2 > li, .more");
+  let batch = 0, raf = 0;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      e.target.style.setProperty("--i", batch++);
+      e.target.classList.add("in");
+      io.unobserve(e.target);
+    });
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => (batch = 0));
+  }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
+  els.forEach((el) => { el.classList.add("reveal"); io.observe(el); });
+})();
+
+// Count every number inside an element up from 0 (keeps symbols, commas, decimals)
+function countUp(el, ms = 900) {
+  if (REDUCE_MOTION || !el) return;
+  const node = [...el.childNodes].find((n) => n.nodeType === 3 && /d/.test(n.textContent));
+  if (!node) return;
+  const final = node.textContent;
+  const nums = final.match(/d[d,]*(.d+)?/g).map((s) => ({ v: parseFloat(s.replace(/,/g, "")), d: (s.split(".")[1] || "").length }));
+  const t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    let i = 0;
+    node.textContent = final.replace(/d[d,]*(.d+)?/g, () => {
+      const { v, d } = nums[i++];
+      return (v * e).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+    });
+    if (k < 1) requestAnimationFrame(step); else node.textContent = final;
+  };
+  requestAnimationFrame(step);
+}
+
+/* =========================================================
+   Hover preview: open the screenshot above the card when there
+   is not enough room below it.
+   ========================================================= */
+(function previewFlip() {
+  if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  const place = (card) => {
+    const r = card.getBoundingClientRect();
+    const h = r.width * 0.625 + 24; // 16:10 screenshot + gap
+    card.classList.toggle("flip", r.bottom + h > innerHeight && r.top - h > 0);
+  };
+  document.querySelectorAll(".app h3 a").forEach((link) => {
+    const card = link.closest(".app");
+    link.addEventListener("mouseenter", () => place(card));
+    link.addEventListener("focus", () => place(card));
+  });
+})();
+
+/* =========================================================
    Contact chat
    ---------------------------------------------------------
    Messages are delivered with Web3Forms (free, no backend).
@@ -407,6 +468,34 @@ function showVisits() {
           "Updated " + dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + ". Self-reported, before fees.";
       }
       box.hidden = false;
+      ["rev-mrr", "rev-total", "rev-count"].forEach((id) => countUp(document.getElementById(id)));
     })
     .catch(() => {});
+})();
+
+/* =========================================================
+   FilRadio widget: "Listen live" on the FilRadio row opens the player;
+   the button shows the station while something is playing.
+   ========================================================= */
+(function filRadio() {
+  const btn = document.querySelector("[data-filradio]");
+  if (!btn) return;
+  const text = btn.querySelector(".listen__text");
+  const ready = () => {
+    if (!window.FilRadio) return false;
+    btn.hidden = false;
+    return true;
+  };
+  // the widget script is deferred and loads after this one; wait for it briefly
+  if (!ready()) {
+    let tries = 0;
+    const t = setInterval(() => { if (ready() || ++tries > 40) clearInterval(t); }, 250);
+  }
+  btn.addEventListener("click", () => window.FilRadio?.toggle());
+  addEventListener("filradio:state", (e) => {
+    const { playing, station } = e.detail || {};
+    const name = typeof station === "string" ? station : station?.name || station?.title || "";
+    btn.classList.toggle("is-playing", !!playing);
+    text.textContent = playing ? (name ? "Playing: " + name : "Playing") : "Listen live";
+  });
 })();
